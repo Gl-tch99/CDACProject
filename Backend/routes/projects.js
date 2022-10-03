@@ -38,13 +38,6 @@ router.post("/submit", (req, res) => {
       console.log("Error during record insertion : " + err);
       res.status(401).send(err);
     });
-  //   User.findOne({userid:})
-  /*p1.save((err)=>{
-    if(err) res.sendStatus(400)
-    else
- p1.save()
-    res.send("data inserted successfully")
- })*/
 });
 
 const generateUUID = () => {

@@ -2,8 +2,9 @@ import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { UserContext } from "../App";
+import Tilt from "react-parallax-tilt";
 
-export default function WorkingProj() {
+export default function WorkingProj({ handleRerender }) {
   const { LoggedIn, setLoggedIn, User, setUser } = useContext(UserContext);
   const [WorkingProj, setWorkingProj] = useState([]);
   const navigate = useNavigate();
@@ -12,8 +13,34 @@ export default function WorkingProj() {
     console.log(User.projects.length);
   }, [User]);
 
-  const handleChangeStatus = (value, project) => {
+  const handleChangeStatus = async (value, project) => {
     if (value === "Completed") {
+      await axios
+        .put("http://localhost:3000/users/changeprojstatus", {
+          headers: {
+            authorization: "Bearer " + localStorage.token,
+          },
+          data: {
+            project,
+            value,
+          },
+        })
+        .then((res) => {
+          console.log("done");
+          navigate("");
+        });
+      handleRerender();
+    } else {
+      await axios.put("http://localhost:3000/users/changeprojstatus", {
+        headers: {
+          authorization: "Bearer " + localStorage.token,
+        },
+        data: {
+          project,
+          value,
+        },
+      });
+      handleRerender();
     }
   };
 
@@ -21,10 +48,10 @@ export default function WorkingProj() {
     <>
       {User.projects !== 0 &&
         User.projects.map((project, index) => {
-          if (project.status === "Working") {
+          if (project.status === "Working" || project.status === "Listed") {
             return (
               <div
-                className="flex w-[93%] bg-transparent border text-neutral-content h-[20%] felx justify-evenly items-center cursor-pointer rounded-2xl py-3"
+                className="flex w-[93%] bg-transparent border text-neutral-content h-[20%] felx justify-evenly items-center cursor-pointer rounded-2xl py-3 "
                 key={index}
               >
                 <div className="flex flex-col w-[80%] ml-2">
@@ -32,7 +59,7 @@ export default function WorkingProj() {
                     {project.name}
                   </div>
                   <div className="text-white font-extralight text-md">
-                    Description: {project.description}
+                    Description: {project.status}
                   </div>
                 </div>
                 <div>
@@ -106,7 +133,7 @@ export default function WorkingProj() {
                 </div>
               </div>
             );
-          } else return <div></div>;
+          } else return <div key={index}></div>;
         })}
     </>
   );

@@ -18,12 +18,40 @@ export default function Home() {
   const { LoggedIn, setLoggedIn, User, setUser } = useContext(UserContext);
   const [FriendDiv, setFriendDiv] = useState("Friendslist");
   const [Local, setLocal] = useLocalStorage("User");
+  const [Search, setSearch] = useState("");
+  const [SearchResult, setSearchResult] = useState([]);
+  const [ReRender, setReRender] = useState(false);
+  const [Chat, setChat] = useState(true);
+
+  const handleRerender = () => {
+    console.log("handle rerender ran.");
+    setReRender(!ReRender);
+  };
 
   useEffect(() => {
     console.log("refreshed");
     let result = verifytoken();
     console.log(result);
-  }, [User]);
+  }, [ReRender]);
+
+  const handleSearch = async () => {
+    await axios
+      .post("http://localhost:3000/projects/search", {
+        headers: {
+          authorization: "Bearer " + localStorage.token,
+        },
+        data: {
+          Search,
+        },
+      })
+      .then((response) => {
+        console.log(response.data);
+        const users = response.data;
+        console.log(users);
+        setSearchResult(users);
+      })
+      .catch((error) => console.log(error));
+  };
 
   const verifytoken = async () => {
     await axios
@@ -36,6 +64,7 @@ export default function Home() {
         console.log(res);
         const users = res.data;
         setLoggedIn(true);
+        setUser(users);
         setLocal(users);
         return true;
       })
@@ -43,6 +72,10 @@ export default function Home() {
         console.log(error);
         return false;
       });
+  };
+
+  const setChatProp = () => {
+    setChat(false);
   };
   return (
     <div className="flex justify-center items-center h-screen w-screen ">
@@ -58,15 +91,10 @@ export default function Home() {
             id="left-1"
             className="flex flex-col justify-evenly items-center rounded-3xl w-full h-[60%] border overflow-scroll md:overflow-auto scrollbar-hide gap-8"
           >
-            <div className=" w-full flex justify-evenly items-center overflow-visible">
-              {/* <input
-                type="text"
-                className=" flex justify-start items-center h-[10%] w-[93%] border rounded-3xl mt-2"
-                className="bg-transparent text-2xl font-extralight ml-4 focus:outline-none w-full pb-1"
-                placeholder="Search for Friends?"
-              ></input> */}
-
-              <div className="tabs w-full justify-center ">
+            {/* {Chat ? (
+              <> */}
+            <div className=" w-full flex justify-evenly items-center overflow-visible ">
+              <div className="tabs w-full justify-center mt-4 ">
                 <button
                   className={`tab tab-md tab-lifted text-lg h-14 w-1/3 ${
                     FriendDiv === "Friendslist" ? "tab-active" : ""
@@ -99,25 +127,41 @@ export default function Home() {
                 </button>
               </div>
             </div>
-            <div className="h-[85%] w-[98%] rounded-3xl justify-self-end ">
+            <div className="h-[85%] w-[98%] rounded-3xl justify-self-end">
               <div className="flex flex-col items-center h-full mt-4 gap-3">
                 {/* ------------------------------------------------------------------------ */}
                 {FriendDiv === "Friendslist" ? (
-                  <Friendslist />
+                  <Friendslist setChatProp={setChatProp} />
                 ) : FriendDiv === "Friendreq" ? (
-                  <Friendreq />
-                ) : (
+                  <Friendreq handleRerender={handleRerender} />
+                ) : FriendDiv === "Friendadd" ? (
                   <Friendadd />
+                ) : FriendDiv === "Chat" ? (
+                  <div>asd</div>
+                ) : (
+                  <div>asdas</div>
                 )}
+
                 {/* ------------------------------------------------------------------------ */}
               </div>
             </div>
+            {/* </>
+            ) : (
+              <div
+                className="text-white"
+                onClick={() => {
+                  setChat(true);
+                }}
+              >
+                switch
+              </div>
+            )} */}
           </div>
           <div
             id="left-2"
             className="rounded-3xl w-full h-[38%] border overflow-scroll scrollbar-hide"
           >
-            <UserProjects />
+            <UserProjects handleRerender={handleRerender} />
           </div>
         </div>
         <div
@@ -130,7 +174,7 @@ export default function Home() {
             <Tilt
               glareEnable={true}
               glareMaxOpacity={1}
-              className="h-full w-[47%] flex flex-col justify-center border rounded-box items-center m-2"
+              className="h-full w-[47%] flex flex-col justify-center border rounded-box items-center m-2 overflow-hidden"
             >
               <div className="text-white text-2xl  font-extralight flex flex-col ">
                 <div className="text-center text-xl">Add Project.</div>
@@ -152,33 +196,30 @@ export default function Home() {
             <Tilt
               glareEnable={true}
               glareMaxOpacity={1}
-              className="h-full w-[47%] flex flex-col justify-center border rounded-box items-center bg-transparent m-2"
+              className="h-full w-[47%] flex flex-col justify-center border rounded-box items-center bg-transparent m-2 overflow-hidden"
             >
               <input
                 className="bg-transparent border w-[80%] rounded-full text-white text-2xl font-extralight pb-1 pl-4"
                 placeholder="Search Project"
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                }}
+                value={Search}
               ></input>
-              <button className="btn btn-outline btn-success btn-sm rounded-full w-36 mt-4">
+              <button
+                className="btn btn-outline btn-success btn-sm rounded-full w-36 mt-4"
+                onClick={() => {
+                  handleSearch();
+                }}
+              >
                 Search
               </button>
             </Tilt>
           </div>
           <div className="border w-full h-[77%] rounded-3xl flex flex-col justify-start items-center">
             {/* --------------------------------------------------------------------------------------------------------------------- */}
-
-            {/* <div className="w-[98%] h-[98%] rounded-3xl flex flex-col shrink-0 justify-start gap-2 items-center mt-2 pt-2 py-2 overflow-scroll scrollbar-hide">
-              <div className="card w-full bg-transparent shadow-xl shrink-0 border">
-                <div className="card-body">
-                  <h2 className="card-title"></h2>
-                  <p>If a dog chews shoes whose shoes does he choose?</p>
-                  <div className="card-actions justify-end">
-                    <button className="btn btn-primary">Buy Now</button>
-                  </div>
-                </div>
-              </div>
-            </div> */}
             <div className="w-[96%] h-[98%] rounded-3xl flex flex-col shrink-0 justify-start gap-2 items-center mt-2 pt-2 py-2 overflow-scroll scrollbar-hide">
-              <Projects />
+              <Projects handleRerender={handleRerender} />
             </div>
             {/* --------------------------------------------------------------------------------------------------------------------- */}
           </div>
@@ -188,16 +229,6 @@ export default function Home() {
           id="right"
           className=" flex flex-col justify-start items-center rounded-3xl w-[25%] h-[93%] border overflow-scroll md:overflow-auto scrollbar-hide gap-4"
         >
-          {/* <div>
-            <button
-              className="bg-green-900 rounded-full mt-4 text-white font-extralight text-2xl py-2 px-5 pb-3 self-end"
-              onClick={() => {
-                handleLogout();
-              }}
-            >
-              Logout
-            </button>
-          </div> */}
           <Profile />
         </div>
       </div>
